@@ -7,13 +7,6 @@ export const defaultAgents: Agent[] = [
         email: 'brahim@fatmi.com',
         role: 'director',
         department: 'Management'
-    },
-    {
-        id: 'a1111111-1111-1111-1111-111111111111',
-        name: 'Ibrahim Fatmi',
-        email: 'brahim@fatmi.com',
-        role: 'agent',
-        department: 'General'
     }
 ];
 
