@@ -1,0 +1,129 @@
+import Dexie, { Table } from 'dexie';
+import { Agent, Invoice, InvoiceItem, Setting } from '../types';
+import { defaultAgents } from '../data/defaultAgents';
+
+export class InvoiceDatabase extends Dexie {
+  agents!: Table<Agent>;
+  invoices!: Table<Invoice>;
+  invoiceItems!: Table<InvoiceItem>;
+  settings!: Table<Setting>;
+
+  constructor() {
+    super('invoice_db');
+
+    this.version(5).stores({
+      agents: 'id, name, email, role',
+      invoices: 'id, agentId, status, createdAt, clientName, *clientEmail, *notes, passportNumber, flightNumber, visaStatus, departureDate, dateOfBirth',
+      invoiceItems: 'id, invoiceId',
+      settings: 'id, theme, language'
+    });
+
+    // Add hooks for data validation
+    this.agents.hook('creating', function (_primKey, obj) {
+      if (!obj.id || !obj.email || !obj.role) {
+        throw new Error('Invalid agent data');
+      }
+    });
+
+    this.invoices.hook('creating', function (_primKey, obj) {
+      if (!obj.agentId || !obj.createdAt) {
+        throw new Error('Invalid invoice data');
+      }
+    });
+  }
+}
+
+export const db = new InvoiceDatabase();
+
+// Initialize with demo data if empty
+export async function resetAndInitializeDatabase() {
+  try {
+    console.log('Deleting database...');
+    await db.delete();
+    console.log('Database deleted');
+
+    // Clear localStorage
+    localStorage.clear();
+    console.log('Local storage cleared');
+
+    // Page reload will trigger fresh initialization
+    console.log('Reloading page...');
+
+    // Reload the page
+    window.location.reload();
+  } catch (error) {
+    console.error('Error resetting database:', error);
+  }
+}
+
+async function initializeDemoData() {
+  try {
+    const agentCount = await db.agents.count();
+    if (agentCount > 0) {
+      console.log('Database already initialized');
+      return;
+    }
+
+    console.log('Clearing existing data...');
+    // Clear any existing data
+    await Promise.all([
+      db.agents.clear(),
+      db.invoices.clear(),
+      db.invoiceItems.clear(),
+      db.settings.clear()
+    ]);
+
+    console.log('Initializing demo data...');
+
+    // Add default agents
+    await Promise.all(defaultAgents.map(agent => db.agents.add(agent)));
+
+    // Add some demo invoices with different statuses
+    const statuses: ('draft' | 'sent' | 'paid' | 'overdue')[] = ['draft', 'sent', 'paid', 'overdue'];
+    const demoInvoiceIds = await Promise.all(statuses.map(status =>
+      db.invoices.add({
+        id: crypto.randomUUID(),
+        agentId: 'a1111111-1111-1111-1111-111111111111',
+        total: Math.floor(Math.random() * 5000) + 500, // Random amount between 500 and 5500
+        status,
+        createdAt: new Date().toISOString(),
+        clientName: `Demo Client (${status})`,
+        clientEmail: 'client@example.com',
+        notes: `Demo invoice in ${status} status`
+      })
+    ));
+
+    // Add demo invoice items for each invoice
+    await Promise.all(demoInvoiceIds.map(invoiceId =>
+      db.invoiceItems.add({
+        id: crypto.randomUUID(),
+        invoiceId: invoiceId as string,
+        description: 'Demo Item',
+        quantity: 1,
+        unitPrice: 1000
+      })
+    ));
+
+    // Add default settings
+    await db.settings.add({
+      id: '1',
+      theme: 'light',
+      language: 'fr'
+    });
+
+    console.log('Demo data initialized successfully');
+  } catch (err) {
+    console.error('Failed to initialize demo data:', err);
+    throw err;
+  }
+}
+
+// Initialize database when it's ready
+db.on('ready', async () => {
+  try {
+    await initializeDemoData();
+    console.log('Database ready and initialized');
+  } catch (err) {
+    console.error('Failed to initialize database:', err);
+  }
+});
