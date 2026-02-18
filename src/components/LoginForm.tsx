@@ -127,15 +127,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onBack, error }) => {
             </button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-8 p-4 bg-purple-50 rounded-lg border border-purple-200">
-            <h3 className="text-sm font-medium text-purple-900 mb-2">Director Credentials:</h3>
-            <div className="text-sm text-purple-700 space-y-1">
-              <p><span className="font-medium">Email:</span> brahim@fatmi.com</p>
-              <p><span className="font-medium">Password:</span> Ibrahim1972</p>
-            </div>
-          </div>
-        </div>
+                 </div>
 
         {/* Footer */}
         <div className="text-center mt-8">
