@@ -50,7 +50,7 @@ export interface Agent {
   id?: string;
   name: string;
   email: string;
-  role: 'agent' | 'director';
+  role: 'agent';
   department?: string;
 }
 
@@ -75,7 +75,7 @@ export interface Setting {
 export interface User {
   id: string;
   password: string;
-  role: 'agent' | 'director';
+  role: 'agent';
   name: string;
 }
 

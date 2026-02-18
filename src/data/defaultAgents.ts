@@ -2,10 +2,10 @@ import { Agent } from '../types';
 
 export const defaultAgents: Agent[] = [
     {
-        id: 'd1111111-1111-1111-1111-111111111111',
+        id: 'a1111111-1111-1111-1111-111111111111',
         name: 'Ibrahim Fatmi',
         email: 'brahim@fatmi.com',
-        role: 'director',
+        role: 'agent',
         department: 'Management'
     }
 ];

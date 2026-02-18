@@ -24,14 +24,14 @@ const AgentPortal: React.FC<AgentPortalProps> = () => {
   const currentAgentId = agentProfile?.id;
 
   const { invoices = [], error: invoicesError, createInvoice, updateInvoice, deleteInvoice } = useInvoices(currentAgentId);
-  const { stats = { totalInvoices: 0, totalRevenue: 0, paidInvoices: 0, unpaidInvoices: 0, pendingInvoices: 0, recentInvoices: [] }, isLoading: statsLoading } = useDashboardStats(currentAgentId);
+  const { stats = { totalInvoices: 0, totalRevenue: 0, paidInvoices: 0, unpaidInvoices: 0, pendingInvoices: 0, recentInvoices: [] } } = useDashboardStats(currentAgentId);
   const { invoices: todaysInvoices = [] } = useTodaysInvoices(currentAgentId);
   const { agents = [], isLoading: agentsLoading } = useAgents();
 
   // Show loading state if agent profile is not loaded yet
   if (!agentProfile) {
     return (
-      <Layout title="Agent Portal" userType="agent">
+      <Layout title="Agent Portal">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -48,7 +48,7 @@ const AgentPortal: React.FC<AgentPortalProps> = () => {
   // Show loading state if any critical data is still loading
   if (agentsLoading && !currentAgent) {
     return (
-      <Layout title="Agent Portal" userType="agent">
+      <Layout title="Agent Portal">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -62,7 +62,7 @@ const AgentPortal: React.FC<AgentPortalProps> = () => {
   // Show error if there's a critical error
   if (invoicesError) {
     return (
-      <Layout title="Agent Portal" userType="agent">
+      <Layout title="Agent Portal">
         <div className="flex items-center justify-center h-64">
           <div className="text-center max-w-md">
             <AlertCircle className="w-8 h-8 text-red-600 mx-auto mb-4" />
@@ -301,7 +301,7 @@ const AgentPortal: React.FC<AgentPortalProps> = () => {
   };
 
   return (
-    <Layout title="Agent Portal" userType="agent">
+    <Layout title="Agent Portal">
       {renderContent()}
     </Layout>
   );

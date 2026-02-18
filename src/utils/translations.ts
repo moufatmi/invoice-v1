@@ -250,7 +250,7 @@ export const translations = {
     departureDate: 'Date de départ',
     roomType: 'Type de chambre',
     visaStatus: 'Statut du visa',
-    gender: 'Genre',
+    gender: 'Sexe',
     male: 'Homme',
     female: 'Femme',
     double: 'Double',
@@ -259,10 +259,10 @@ export const translations = {
     quint: 'Quint',
     visaPending: 'En attente',
     visaIssued: 'Délivré',
-    scanPassport: 'Scanner le passeport',
-    scanning: 'Numérisation...',
+    scanPassport: 'Scanner ',
+    scanning: 'Scan en cours...',
     dateOfBirth: 'Date de naissance',
-    ocrError: 'Échec de la numérisation du passeport. Veuillez réessayer.',
+    ocrError: 'Échec du scan. Veuillez réessayer.',
 
     // Settings
     settingsTitle: 'Paramètres',
@@ -356,10 +356,10 @@ export const translations = {
     quint: '五人房',
     visaPending: '待处理',
     visaIssued: '已签发',
-    scanPassport: '扫描护照',
+    scanPassport: '扫描',
     scanning: '正在扫描...',
     dateOfBirth: '出生日期',
-    ocrError: '护照扫描失败。请重试。',
+    ocrError: '扫描失败。请重试。',
 
     // Settings
     settingsTitle: '设置',

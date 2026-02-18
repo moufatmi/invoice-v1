@@ -7,16 +7,14 @@ import { useTranslation } from '../utils/translations';
 interface LayoutProps {
   children: React.ReactNode;
   title: string;
-  userType: 'agent' | 'director';
   userName?: string;
   onLogout?: () => void;
   onSignOut?: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ 
-  children, 
-  title, 
-  userType, 
+const Layout: React.FC<LayoutProps> = ({
+  children,
+  title,
   userName,
   onLogout,
   onSignOut
@@ -34,10 +32,10 @@ const Layout: React.FC<LayoutProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div 
+              <div
                 className="p-2 rounded-lg"
-                style={{ 
-                  backgroundColor: userType === 'director' ? '#7c3aed' : '#03989e'
+                style={{
+                  backgroundColor: '#03989e'
                 }}
               >
                 <Plane className="h-6 w-6 text-white" />
@@ -47,7 +45,7 @@ const Layout: React.FC<LayoutProps> = ({
                 <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full">
@@ -55,27 +53,27 @@ const Layout: React.FC<LayoutProps> = ({
                 </div>
                 <div className="hidden sm:block">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {userName || (userType === 'agent' ? 'Agent Portal' : 'Director Dashboard')}
+                    {userName || 'Agent Portal'}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {userType === 'agent' ? 'Travel Agent' : 'Director'}
+                    Travel Agent
                   </p>
                 </div>
               </div>
-              
-              <button 
+
+              <button
                 onClick={() => setIsSettingsOpen(true)}
                 className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                 title={t('settings')}
               >
                 <Settings className="h-5 w-5" />
               </button>
-              
+
               {handleSignOut && (
-                <button 
+                <button
                   onClick={handleSignOut}
                   className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors duration-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                  title={userType === 'director' ? 'Logout' : 'Sign Out'}
+                  title="Sign Out"
                 >
                   <LogOut className="h-5 w-5" />
                 </button>
@@ -91,9 +89,9 @@ const Layout: React.FC<LayoutProps> = ({
       </main>
 
       {/* Settings Modal */}
-      <SettingsModal 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
       />
     </div>
   );

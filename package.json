@@ -19,7 +19,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build:vite",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "update": "git add . && git commit -m \"Update\" && git push && npm run deploy"
   },
   "build": {
     "appId": "com.invoicemanager.app",

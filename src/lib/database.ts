@@ -58,22 +58,9 @@ export async function resetAndInitializeDatabase() {
 
 async function initializeDemoData() {
   try {
-    console.log('Synchronizing default agents...');
-    // Ensure all default agents exist in the database
-    await Promise.all(defaultAgents.map(async (agent) => {
-      const existing = await db.agents.get(agent.id!);
-      if (!existing) {
-        console.log(`Adding missing agent: ${agent.email}`);
-        await db.agents.add(agent);
-      } else if (existing.email !== agent.email || existing.role !== agent.role) {
-        console.log(`Updating agent: ${agent.email}`);
-        await db.agents.update(agent.id!, agent);
-      }
-    }));
-
     const agentCount = await db.agents.count();
-    if (agentCount > 1) { // If there are already agents (including the ones we just checked/added), don't add demo invoices
-      console.log('Database already has data, skipping demo invoices initialization');
+    if (agentCount > 0) {
+      console.log('Database already initialized');
       return;
     }
 
@@ -89,6 +76,8 @@ async function initializeDemoData() {
     console.log('Initializing demo data...');
 
     // Add default agents
+    await Promise.all(defaultAgents.map(agent => db.agents.add(agent)));
+
     // Add some demo invoices with different statuses
     const statuses: ('draft' | 'sent' | 'paid' | 'overdue')[] = ['draft', 'sent', 'paid', 'overdue'];
     const demoInvoiceIds = await Promise.all(statuses.map(status =>

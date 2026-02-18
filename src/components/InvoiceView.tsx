@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Download, Send, Edit, User, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { X, Download, Send, Edit, User, CheckCircle, AlertCircle } from 'lucide-react';
 import { Invoice } from '../types';
 import { formatCurrency, formatDate, getStatusColor } from '../utils/helpers';
 import { generateInvoicePDF } from '../utils/pdfGenerator';
@@ -20,7 +20,7 @@ const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, onClose, onEdit, onS
 
     setIsUpdatingStatus(true);
     try {
-      await onStatusUpdate(invoice.id, newStatus);
+      await onStatusUpdate(invoice.id || '', newStatus);
     } catch (error) {
       console.error('Error updating status:', error);
       alert('Failed to update invoice status. Please try again.');
@@ -172,8 +172,8 @@ const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, onClose, onEdit, onS
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">INVOICE</h1>
               <div className="space-y-1">
                 <p className="text-gray-600 dark:text-gray-400">Invoice Number: <span className="font-medium">{invoice.invoiceNumber}</span></p>
-                <p className="text-gray-600 dark:text-gray-400">Date: <span className="font-medium">{formatDate(invoice.createdAt)}</span></p>
-                <p className="text-gray-600 dark:text-gray-400">Due Date: <span className="font-medium">{formatDate(invoice.dueDate)}</span></p>
+                <p className="text-gray-600 dark:text-gray-400">Date: <span className="font-medium">{formatDate(invoice.createdAt || '')}</span></p>
+                <p className="text-gray-600 dark:text-gray-400">Due Date: <span className="font-medium">{formatDate(invoice.dueDate || '')}</span></p>
               </div>
             </div>
             <div className="text-right">
@@ -243,7 +243,7 @@ const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, onClose, onEdit, onS
             </div>
           </div>
 
-          {/* Client Highlight for Director */}
+          {/* Client Information */}
           <div className="mb-8 p-4 border rounded-lg" style={{ backgroundColor: '#f0fdfc', borderColor: '#99f6e4' }}>
             <div className="flex items-center space-x-3">
               <div className="p-2 rounded-full" style={{ backgroundColor: '#ccfbf1' }}>
@@ -274,12 +274,12 @@ const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, onClose, onEdit, onS
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {invoice.items.map((item) => (
+                  {invoice.items?.map((item) => (
                     <tr key={item.id}>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{item.description}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-center">{item.quantity}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right">{formatCurrency(item.unitPrice)}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white text-right">{formatCurrency(item.total)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right">{formatCurrency(item.unitPrice || 0)}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white text-right">{formatCurrency(item.total || 0)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -294,11 +294,11 @@ const InvoiceView: React.FC<InvoiceViewProps> = ({ invoice, onClose, onEdit, onS
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(invoice.subtotal)}</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(invoice.subtotal || 0)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Tax:</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(invoice.tax)}</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{formatCurrency(invoice.tax || 0)}</span>
                   </div>
                   <div className="border-t dark:border-gray-600 pt-3">
                     <div className="flex justify-between">
