@@ -126,7 +126,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onBack, error }) => {
               )}
             </button>
           </form>
+<<<<<<< HEAD
         </div>
+=======
+
+                 </div>
+>>>>>>> 45eb7ac79aa7db066480f6f25d6ff3e6bf19a158
 
         {/* Footer */}
         <div className="text-center mt-8">

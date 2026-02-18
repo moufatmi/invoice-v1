@@ -151,6 +151,34 @@ const AuthForm: React.FC<AuthFormProps> = ({ onBack }) => {
               )}
             </button>
           </form>
+<<<<<<< HEAD
+=======
+
+          {/* Toggle between login and signup */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-600">
+              {isLogin ? "Don't have an account?" : "Already have an account?"}
+              <button
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError('');
+                }}
+                className="ml-2 font-medium transition-colors duration-200"
+                style={{ color: '#03989e' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#027a7f';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#03989e';
+                }}
+              >
+                {isLogin ? 'Sign up' : 'Sign in'}
+              </button>
+            </p>
+          </div>
+
+          
+>>>>>>> 45eb7ac79aa7db066480f6f25d6ff3e6bf19a158
         </div>
 
         {/* Footer */}
