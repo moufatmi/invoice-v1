@@ -40,6 +40,7 @@ export const RoomingListPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [draggedClient, setDraggedClient] = useState<Client | null>(null);
     const [isRoomFormOpen, setIsRoomFormOpen] = useState(false);
+    const [activeCity, setActiveCity] = useState<'Makkah' | 'Madinah'>('Makkah');
 
     // Initial load
     useEffect(() => {
@@ -48,12 +49,43 @@ export const RoomingListPage: React.FC = () => {
 
     const fetchData = async () => {
         try {
-            const [roomsData, clientsData] = await Promise.all([
+            const [roomsData, clientsData, invoicesData] = await Promise.all([
                 supabaseService.getRooms(),
-                supabaseService.getClients()
+                supabaseService.getClients(),
+                supabaseService.getInvoices()
             ]);
+
+            // Create a map of the latest Umrah info for each client from invoices
+            const clientUmrahInfo: Record<string, { passportNumber?: string, gender?: string }> = {};
+
+            // Sort invoices by date descending to get the latest info
+            const sortedInvoices = [...invoicesData].sort((a, b) =>
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+
+            sortedInvoices.forEach(inv => {
+                if (inv.client?.id && !clientUmrahInfo[inv.client.id]) {
+                    if (inv.passportNumber || inv.gender) {
+                        clientUmrahInfo[inv.client.id] = {
+                            passportNumber: inv.passportNumber,
+                            gender: inv.gender
+                        };
+                    }
+                }
+            });
+
+            // Enrich clients with info from invoices if missing
+            const enrichedClients = clientsData.map(client => {
+                const info = client.id ? clientUmrahInfo[client.id] : null;
+                return {
+                    ...client,
+                    passportNumber: client.passportNumber || info?.passportNumber,
+                    gender: client.gender || (info?.gender as any)
+                };
+            });
+
             setRooms(roomsData);
-            setClients(clientsData);
+            setClients(enrichedClients);
         } catch (error) {
             console.error('Failed to load rooming list:', error);
         } finally {
@@ -236,8 +268,24 @@ export const RoomingListPage: React.FC = () => {
 
                     {/* Main Canvas: Rooms Grid */}
                     <main className="flex-1 overflow-y-auto p-8">
+                        {/* City Tabs */}
+                        <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl mb-8 w-fit mx-auto shadow-inner">
+                            <button
+                                onClick={() => setActiveCity('Makkah')}
+                                className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition-all duration-300 ${activeCity === 'Makkah' ? 'bg-white dark:bg-gray-700 shadow-xl text-blue-600 scale-105' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                تسكين مكة المكرمة
+                            </button>
+                            <button
+                                onClick={() => setActiveCity('Madinah')}
+                                className={`flex items-center gap-2 px-8 py-3 rounded-xl font-bold transition-all duration-300 ${activeCity === 'Madinah' ? 'bg-white dark:bg-gray-700 shadow-xl text-blue-600 scale-105' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                تسكين المدينة المنورة
+                            </button>
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
-                            {rooms.map(room => (
+                            {rooms.filter(r => r.city === activeCity).map((room) => (
                                 <RoomCard
                                     key={room.id}
                                     room={room}
@@ -298,7 +346,9 @@ export const RoomingListPage: React.FC = () => {
 
                     <div className="flex justify-between items-center border-b-4 border-blue-600 pb-4 mb-8">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">تقرير لائحة التسكين</h1>
+                            <h1 className="text-3xl font-bold text-gray-900">
+                                تقرير لائحة التسكين - {activeCity === 'Makkah' ? 'مكة المكرمة' : 'المدينة المنورة'}
+                            </h1>
                             <p className="text-blue-600 font-medium mt-1">Beausejour Voyage</p>
                         </div>
                         <div className="text-left" dir="ltr">
@@ -307,7 +357,7 @@ export const RoomingListPage: React.FC = () => {
                     </div>
 
                     <div className="space-y-8">
-                        {rooms.map((room) => {
+                        {rooms.filter(r => r.city === activeCity).map((room) => {
                             const roomClients = clients.filter(c =>
                                 room.assignments?.some(a => a.clientId === c.id)
                             );

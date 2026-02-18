@@ -10,6 +10,7 @@ interface RoomFormProps {
 export const RoomForm: React.FC<RoomFormProps> = ({ onSave, onCancel }) => {
     const [room, setRoom] = useState<Omit<Room, 'id' | 'assignments'>>({
         hotelName: '',
+        city: 'Makkah',
         type: 'Double',
         capacity: 2,
         floorNumber: 0,
@@ -59,6 +60,26 @@ export const RoomForm: React.FC<RoomFormProps> = ({ onSave, onCancel }) => {
                                 value={room.hotelName}
                                 onChange={e => setRoom({ ...room, hotelName: e.target.value })}
                             />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">المدينة</label>
+                        <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-xl">
+                            <button
+                                type="button"
+                                onClick={() => setRoom({ ...room, city: 'Makkah' })}
+                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${room.city === 'Makkah' ? 'bg-white dark:bg-gray-800 shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                مكة المكرمة
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setRoom({ ...room, city: 'Madinah' })}
+                                className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${room.city === 'Madinah' ? 'bg-white dark:bg-gray-800 shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                المدينة المنورة
+                            </button>
                         </div>
                     </div>
 

@@ -61,6 +61,15 @@ export const supabaseService = {
 
         if (invoiceError) throw invoiceError;
 
+        // Sync client info if provided
+        if (clientId && (invoice.passportNumber || invoice.gender || invoice.dateOfBirth)) {
+            await this.updateClient(clientId, {
+                passportNumber: invoice.passportNumber,
+                gender: invoice.gender,
+                dateOfBirth: invoice.dateOfBirth
+            });
+        }
+
         // 3. Insert Items
         if (invoice.items && invoice.items.length > 0) {
             const itemsToInsert = invoice.items.map(item => ({
@@ -103,6 +112,15 @@ export const supabaseService = {
 
         if (invoiceError) throw invoiceError;
 
+        // Sync client info if provided
+        if (invoice.client?.id && (invoice.passportNumber || invoice.gender || invoice.dateOfBirth)) {
+            await this.updateClient(invoice.client.id, {
+                passportNumber: invoice.passportNumber,
+                gender: invoice.gender,
+                dateOfBirth: invoice.dateOfBirth
+            });
+        }
+
         // Update items (delete all and recreate for simplicity, or smart update)
         if (invoice.items) {
             await supabase.from('items').delete().eq('invoice_id', id);
@@ -121,8 +139,32 @@ export const supabaseService = {
     },
 
     async deleteInvoice(id: string): Promise<void> {
-        const { error } = await supabase.from('invoices').delete().eq('id', id);
-        if (error) throw error;
+        // 1. Get client ID before deleting invoice
+        const { data: invoice } = await supabase
+            .from('invoices')
+            .select('client_id')
+            .eq('id', id)
+            .single();
+
+        const clientId = invoice?.client_id;
+
+        // 2. Delete the invoice
+        const { error: deleteError } = await supabase.from('invoices').delete().eq('id', id);
+        if (deleteError) throw deleteError;
+
+        // 3. If we have a client ID, check if the client has any other invoices
+        if (clientId) {
+            const { count, error: countError } = await supabase
+                .from('invoices')
+                .select('*', { count: 'exact', head: true })
+                .eq('client_id', clientId);
+
+            if (!countError && count === 0) {
+                // If no other invoices exist, delete the client
+                // This will also cascade delete any room assignments due to DB FK setup
+                await supabase.from('clients').delete().eq('id', clientId);
+            }
+        }
     },
 
     // --- Clients ---
@@ -144,6 +186,26 @@ export const supabaseService = {
                 gender: client.gender,
                 date_of_birth: client.dateOfBirth && client.dateOfBirth.trim() !== '' ? client.dateOfBirth : null
             })
+            .select()
+            .single();
+
+        if (error) throw error;
+        return this.mapClientFromDb(data);
+    },
+
+    async updateClient(id: string, client: Partial<Client>): Promise<Client> {
+        const { data, error } = await supabase
+            .from('clients')
+            .update({
+                name: client.name,
+                email: client.email,
+                phone: client.phone,
+                address: client.address,
+                passport_number: client.passportNumber,
+                gender: client.gender,
+                date_of_birth: client.dateOfBirth && client.dateOfBirth.trim() !== '' ? client.dateOfBirth : undefined
+            })
+            .eq('id', id)
             .select()
             .single();
 
@@ -222,6 +284,7 @@ export const supabaseService = {
             .from('rooms')
             .insert({
                 hotel_name: room.hotelName,
+                city: room.city,
                 type: room.type,
                 capacity: room.capacity,
                 floor_number: room.floorNumber,
@@ -269,6 +332,7 @@ export const supabaseService = {
         return {
             id: dbRoom.id,
             hotelName: dbRoom.hotel_name,
+            city: dbRoom.city || 'Makkah', // Default to Makkah if missing
             type: dbRoom.type,
             capacity: dbRoom.capacity,
             floorNumber: dbRoom.floor_number,

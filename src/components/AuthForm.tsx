@@ -103,8 +103,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onBack }) => {
               {isLogin ? 'Welcome Back' : 'Join Agence de Voyage'}
             </h2>
             <p className="text-gray-600">
-              {isLogin 
-                ? 'Enter your credentials to access your dashboard' 
+              {isLogin
+                ? 'Enter your credentials to access your dashboard'
                 : 'Fill in your details to create your agent account'
               }
             </p>
@@ -217,7 +217,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onBack }) => {
               type="submit"
               disabled={loading || !email || !password || (!isLogin && !name)}
               className="w-full text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
-              style={{ 
+              style={{
                 backgroundColor: '#03989e',
                 opacity: loading || !email || !password || (!isLogin && !name) ? 0.6 : 1
               }}
@@ -269,8 +269,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onBack }) => {
             <div className="mt-6 p-4 rounded-lg border" style={{ backgroundColor: '#f0fdfc', borderColor: '#99f6e4' }}>
               <h3 className="text-sm font-medium mb-2" style={{ color: '#164e63' }}>Demo Agent Account:</h3>
               <div className="text-sm space-y-1" style={{ color: '#155e75' }}>
-                <p><span className="font-medium">Email:</span> test@moussab.com</p>
-                <p><span className="font-medium">Password:</span> ana123</p>
+                <p><span className="font-medium">Email:</span> brahim@fatmi.com</p>
+                <p><span className="font-medium">Password:</span> Ibrahim1972</p>
               </div>
             </div>
           )}

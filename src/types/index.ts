@@ -87,6 +87,7 @@ export interface AuthState {
 export interface Room {
   id: string;
   hotelName: string;
+  city: 'Makkah' | 'Madinah';
   type: 'Double' | 'Triple' | 'Quad' | 'Quint';
   capacity: number;
   floorNumber?: number;
