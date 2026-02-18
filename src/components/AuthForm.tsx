@@ -264,16 +264,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onBack }) => {
             </p>
           </div>
 
-          {/* Demo Credentials for Login */}
-          {isLogin && (
-            <div className="mt-6 p-4 rounded-lg border" style={{ backgroundColor: '#f0fdfc', borderColor: '#99f6e4' }}>
-              <h3 className="text-sm font-medium mb-2" style={{ color: '#164e63' }}>Demo Agent Account:</h3>
-              <div className="text-sm space-y-1" style={{ color: '#155e75' }}>
-                <p><span className="font-medium">Email:</span> brahim@fatmi.com</p>
-                <p><span className="font-medium">Password:</span> Ibrahim1972</p>
-              </div>
-            </div>
-          )}
+          
         </div>
 
         {/* Footer */}
