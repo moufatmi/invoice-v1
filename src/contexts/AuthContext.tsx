@@ -21,24 +21,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [agentProfile, setAgentProfile] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dbInitialized, setDbInitialized] = useState(false);
 
   // Initialize database and check saved session
   useEffect(() => {
     const initializeDb = async () => {
       try {
-        // Wait for any agents to be added (initialization)
-        await new Promise<void>((resolve) => {
-          const checkDb = async () => {
-            const count = await db.agents.count();
-            if (count > 0) {
-              resolve();
-            } else {
-              setTimeout(checkDb, 100);
-            }
-          };
-          checkDb();
-        });
+        // Initialize DB connection
+        await db.open();
 
         // Try to restore session
         const savedAgent = localStorage.getItem('agent');
@@ -55,7 +44,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error initializing:', err);
         setError('Failed to initialize application');
       } finally {
-        setDbInitialized(true);
         setLoading(false);
       }
     };
@@ -68,18 +56,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       setError(null);
 
-      // 1. Check for the primary director account (Ibrahim Fatmi)
-      const isDirector = email === 'brahim@fatmi.com' && password === 'Ibrahim1972';
+      // 1. Check for the primary director account (Ibrahim Fatmi) - RESILIENT LOGIN
+      const isDirector = email.toLowerCase().trim() === 'brahim@fatmi.com' && password === 'Ibrahim1972';
 
       if (isDirector) {
-        // Force get or create in local DB for high reliability
-        let agent = await db.agents.where('email').equals(email).first();
+        // Try to find in DB, but if not found, we use the default and add it later
+        let agent = await db.agents.where('email').equals(email.toLowerCase().trim()).first();
+
         if (!agent) {
+          // Fallback to default if DB is not ready or missing entry
           const { defaultAgents } = await import('../data/defaultAgents');
-          const defaultAgent = defaultAgents.find(a => a.email === email);
-          if (defaultAgent) {
-            await db.agents.add(defaultAgent);
-            agent = defaultAgent;
+          agent = defaultAgents.find(a => a.email === 'brahim@fatmi.com');
+
+          if (agent) {
+            try {
+              await db.agents.put(agent); // Use put to overwrite/insert safely
+            } catch (e) {
+              console.warn('Failed to save Ibrahim to local DB, but allowing login anyway', e);
+            }
           }
         }
 
