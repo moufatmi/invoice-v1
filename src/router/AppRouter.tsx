@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AgentPortalPage from '../pages/AgentPortalPage';
-import AdminPortalPage from '../pages/AdminPortalPage';
 import PortalNavigation from '../components/PortalNavigation';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { SettingsProvider } from '../contexts/SettingsContext';

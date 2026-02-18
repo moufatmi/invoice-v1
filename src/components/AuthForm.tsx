@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Plane, Mail, Lock, User, Building, Eye, EyeOff, ArrowLeft, Shield } from 'lucide-react';
+import { Plane, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface AuthFormProps {
@@ -8,34 +7,23 @@ interface AuthFormProps {
 }
 
 const AuthForm: React.FC<AuthFormProps> = ({ onBack }) => {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [department, setDepartment] = useState('General');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { signIn, signUp } = useAuth();
-
-  const departments = ['General', 'International', 'Domestic', 'Corporate', 'Luxury'];
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || (!isLogin && !name)) return;
+    if (!email || !password) return;
 
     setLoading(true);
     setError('');
 
     try {
-      let result;
-      if (isLogin) {
-        result = await signIn(email, password);
-      } else {
-        result = await signUp(email, password, name, department);
-      }
-
+      const result = await signIn(email, password);
       if (result.error) {
         setError(result.error);
       }
@@ -68,46 +56,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ onBack }) => {
             <Plane className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Agence de Voyage Agent Portal</h1>
-          <p className="text-gray-600">
-            {isLogin ? 'Sign in to your account' : 'Create your agent account'}
-          </p>
-        </div>
-
-        {/* Director Access Button */}
-        <div className="mb-6">
-          <Link
-            to="/admin"
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg flex items-center justify-center space-x-2 transition-colors duration-200 shadow-lg hover:shadow-xl"
-          >
-            <Shield className="h-5 w-5" />
-            <span>Director Access</span>
-          </Link>
-        </div>
-
-        {/* Divider */}
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gradient-to-br from-teal-50 via-white to-cyan-50 text-gray-500">
-              Or continue as agent
-            </span>
-          </div>
+          <p className="text-gray-600">Sign in to your account</p>
         </div>
 
         {/* Auth Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {isLogin ? 'Welcome Back' : 'Join Agence de Voyage'}
-            </h2>
-            <p className="text-gray-600">
-              {isLogin
-                ? 'Enter your credentials to access your dashboard'
-                : 'Fill in your details to create your agent account'
-              }
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+            <p className="text-gray-600">Enter your credentials to access your dashboard</p>
           </div>
 
           {error && (
@@ -117,51 +73,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ onBack }) => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {!isLogin && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <User className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
-                      style={{ '--tw-ring-color': '#03989e' } as React.CSSProperties}
-                      placeholder="Enter your full name"
-                      required={!isLogin}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Department
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Building className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <select
-                      value={department}
-                      onChange={(e) => setDepartment(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
-                      style={{ '--tw-ring-color': '#03989e' } as React.CSSProperties}
-                    >
-                      {departments.map(dept => (
-                        <option key={dept} value={dept}>{dept}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </>
-            )}
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
@@ -215,14 +126,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ onBack }) => {
 
             <button
               type="submit"
-              disabled={loading || !email || !password || (!isLogin && !name)}
+              disabled={loading || !email || !password}
               className="w-full text-white py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl disabled:cursor-not-allowed"
               style={{
                 backgroundColor: '#03989e',
-                opacity: loading || !email || !password || (!isLogin && !name) ? 0.6 : 1
+                opacity: loading || !email || !password ? 0.6 : 1
               }}
               onMouseEnter={(e) => {
-                if (!loading && email && password && (isLogin || name)) {
+                if (!loading && email && password) {
                   e.currentTarget.style.backgroundColor = '#027a7f';
                 }
               }}
@@ -233,47 +144,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ onBack }) => {
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>{isLogin ? 'Signing in...' : 'Creating account...'}</span>
+                  <span>Signing in...</span>
                 </>
               ) : (
-                <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
+                <span>Sign In</span>
               )}
             </button>
           </form>
-
-          {/* Toggle between login and signup */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}
-              <button
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError('');
-                }}
-                className="ml-2 font-medium transition-colors duration-200"
-                style={{ color: '#03989e' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#027a7f';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#03989e';
-                }}
-              >
-                {isLogin ? 'Sign up' : 'Sign in'}
-              </button>
-            </p>
-          </div>
-
-          {/* Demo Credentials for Login */}
-          {isLogin && (
-            <div className="mt-6 p-4 rounded-lg border" style={{ backgroundColor: '#f0fdfc', borderColor: '#99f6e4' }}>
-              <h3 className="text-sm font-medium mb-2" style={{ color: '#164e63' }}>Demo Agent Account:</h3>
-              <div className="text-sm space-y-1" style={{ color: '#155e75' }}>
-                <p><span className="font-medium">Email:</span> brahim@fatmi.com</p>
-                <p><span className="font-medium">Password:</span> Ibrahim1972</p>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer */}

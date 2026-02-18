@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
 import AgentPortal from '../components/AgentPortal';
+import DirectorDashboard from '../components/DirectorDashboard';
 import AuthForm from '../components/AuthForm';
 import LoadingSpinner from '../components/LoadingSpinner';
 import NetworkStatus from '../components/NetworkStatus';
@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDevelopmentMode } from '../hooks/useDevelopmentMode';
 
 const AgentPortalPage: React.FC = () => {
-  const { isAuthenticated, loading, error, agentProfile, forceInitComplete, retryAuth } = useAuth();
+  const { isAuthenticated, loading, error, agentProfile, forceInitComplete, retryAuth, signOut } = useAuth();
   const { enableBypass } = useDevelopmentMode();
 
   // Set page title
@@ -40,7 +40,7 @@ const AgentPortalPage: React.FC = () => {
             >
               Try Again
             </button>
-            
+
             {/* Development bypass option */}
             {import.meta.env.DEV && (
               <button
@@ -53,7 +53,7 @@ const AgentPortalPage: React.FC = () => {
                 Development: Skip Auth Check
               </button>
             )}
-            
+
             <p className="text-sm text-gray-500 mt-2">
               If loading takes too long, click "Try Again"
             </p>
@@ -63,21 +63,20 @@ const AgentPortalPage: React.FC = () => {
     );
   }
 
-  // Redirect to admin if user is a director
-  if (isAuthenticated && agentProfile && (agentProfile as any).role === 'director') {
-    return <Navigate to="/admin" replace />;
-  }
-
   // Show authentication form if not authenticated
   if (!isAuthenticated) {
     return <AuthForm />;
   }
 
-  // Show agent portal
+  // Show portal based on role
   return (
     <div className="transition-colors duration-200">
       <NetworkStatus />
-      <AgentPortal />
+      {agentProfile?.role === 'director' ? (
+        <DirectorDashboard onLogout={signOut} />
+      ) : (
+        <AgentPortal />
+      )}
     </div>
   );
 };

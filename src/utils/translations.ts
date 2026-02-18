@@ -16,7 +16,6 @@ export const translations = {
     // Agent Portal
     agentDashboard: 'Agent Dashboard',
     createInvoice: 'Create Invoice',
-    directorAccess: 'Director Access',
     createAndManage: 'Create and manage client invoices efficiently',
     todaysActivity: "Today's Activity",
     performance: 'Performance',
@@ -114,7 +113,6 @@ export const translations = {
     // Agent Portal
     agentDashboard: 'لوحة تحكم الوكيل',
     createInvoice: 'إنشاء فاتورة',
-    directorAccess: 'وصول المدير',
     createAndManage: 'إنشاء وإدارة فواتير العملاء بكفاءة',
     todaysActivity: 'نشاط اليوم',
     performance: 'الأداء',
@@ -212,7 +210,6 @@ export const translations = {
     // Agent Portal
     agentDashboard: 'Tableau de bord Agent',
     createInvoice: 'Créer une facture',
-    directorAccess: 'Accès Directeur',
     createAndManage: 'Créer et gérer efficacement les factures clients',
     todaysActivity: "Activité d'aujourd'hui",
     performance: 'Performance',
@@ -244,6 +241,28 @@ export const translations = {
     additionalNotes: 'Notes supplémentaires',
     saveAsDraft: 'Enregistrer comme brouillon',
     createAndSend: 'Créer et envoyer',
+
+    // Umrah Details
+    umrahDetails: 'Détails de l\'Umrah',
+    travelInfo: 'Informations de voyage et d\'hébergement',
+    passportNumber: 'Numéro de passeport',
+    flightNumber: 'Numéro de vol',
+    departureDate: 'Date de départ',
+    roomType: 'Type de chambre',
+    visaStatus: 'Statut du visa',
+    gender: 'Genre',
+    male: 'Homme',
+    female: 'Femme',
+    double: 'Double',
+    triple: 'Triple',
+    quad: 'Quad',
+    quint: 'Quint',
+    visaPending: 'En attente',
+    visaIssued: 'Délivré',
+    scanPassport: 'Scanner le passeport',
+    scanning: 'Numérisation...',
+    dateOfBirth: 'Date de naissance',
+    ocrError: 'Échec de la numérisation du passeport. Veuillez réessayer.',
 
     // Settings
     settingsTitle: 'Paramètres',
@@ -288,7 +307,6 @@ export const translations = {
     // Agent Portal
     agentDashboard: '代理仪表板',
     createInvoice: '创建发票',
-    directorAccess: '主管访问',
     createAndManage: '高效创建和管理客户发票',
     todaysActivity: '今日活动',
     performance: '表现',
@@ -320,6 +338,28 @@ export const translations = {
     additionalNotes: '附加说明',
     saveAsDraft: '保存为草稿',
     createAndSend: '创建并发送',
+
+    // Umrah Details
+    umrahDetails: '朝觐详情',
+    travelInfo: '旅行和住宿信息',
+    passportNumber: '护照号码',
+    flightNumber: '航班号',
+    departureDate: '出发日期',
+    roomType: '房型',
+    visaStatus: '签证状态',
+    gender: '性别',
+    male: '男',
+    female: '女',
+    double: '双人房',
+    triple: '三人房',
+    quad: '四人房',
+    quint: '五人房',
+    visaPending: '待处理',
+    visaIssued: '已签发',
+    scanPassport: '扫描护照',
+    scanning: '正在扫描...',
+    dateOfBirth: '出生日期',
+    ocrError: '护照扫描失败。请重试。',
 
     // Settings
     settingsTitle: '设置',

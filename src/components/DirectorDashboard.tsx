@@ -8,6 +8,7 @@ import DashboardStats from './DashboardStats';
 import { AgentManagement } from './AgentManagement';
 import { Invoice, Agent } from '../types';
 import { useInvoices, useDashboardStats, useTodaysInvoices, useAgents } from '../hooks/useLocalDb';
+import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../utils/helpers';
 
 interface DirectorDashboardProps {
@@ -15,6 +16,7 @@ interface DirectorDashboardProps {
 }
 
 const DirectorDashboard: React.FC<DirectorDashboardProps> = ({ onLogout }) => {
+  const { agentProfile } = useAuth();
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [viewMode, setViewMode] = useState<'today' | 'all'>('today');
@@ -176,7 +178,7 @@ const DirectorDashboard: React.FC<DirectorDashboardProps> = ({ onLogout }) => {
       <Layout
         title="Director Dashboard"
         userType="director"
-        userName="Moussab"
+        userName={agentProfile?.name || 'Director'}
         onLogout={onLogout}
       >
         <div className="flex items-center justify-center min-h-64">
@@ -192,7 +194,7 @@ const DirectorDashboard: React.FC<DirectorDashboardProps> = ({ onLogout }) => {
       <Layout
         title="Director Dashboard"
         userType="director"
-        userName="Moussab"
+        userName={agentProfile?.name || 'Director'}
         onLogout={onLogout}
       >
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
@@ -215,7 +217,7 @@ const DirectorDashboard: React.FC<DirectorDashboardProps> = ({ onLogout }) => {
       <Layout
         title="Edit Invoice"
         userType="director"
-        userName="Moussab"
+        userName={agentProfile?.name || 'Director'}
         onLogout={onLogout}
       >
         <InvoiceForm
@@ -232,7 +234,7 @@ const DirectorDashboard: React.FC<DirectorDashboardProps> = ({ onLogout }) => {
       <Layout
         title="Invoice Details"
         userType="director"
-        userName="Moussab"
+        userName={agentProfile?.name || 'Director'}
         onLogout={onLogout}
       >
         <InvoiceView
@@ -249,7 +251,7 @@ const DirectorDashboard: React.FC<DirectorDashboardProps> = ({ onLogout }) => {
     <Layout
       title="Director Dashboard"
       userType="director"
-      userName="Moussab"
+      userName={agentProfile?.name || 'Director'}
       onLogout={onLogout}
     >
       {/* Header */}
