@@ -229,3 +229,107 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
   const filename = `Invoice_${invoice.invoiceNumber}_${clientNameSafe.replace(/\s+/g, '_')}.pdf`;
   pdf.save(filename);
 };
+
+export const generateRoomingListPDF = (rooms: any[], allClients: any[]): void => {
+  const pdf = new jsPDF('p', 'mm', 'a4');
+
+  // Create a temporary container for HTML rendering
+  const container = document.createElement('div');
+  container.id = 'pdf-export-container';
+  container.style.position = 'fixed';
+  container.style.top = '0';
+  container.style.left = '-1000vw'; // High offset instead of -9999px for better rendering
+  container.style.width = '800px'; // Set a fixed pixel width for stability
+  container.style.backgroundColor = 'white';
+  container.dir = 'rtl';
+
+  // Use a cleaner HTML structure with explicit fonts
+  let htmlContent = `
+    <div style="padding: 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: white;">
+      <div style="background: #03989e; color: white; padding: 30px; border-radius: 12px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h1 style="margin: 0; font-size: 28px; font-weight: bold;">تقرير لائحة التسكين</h1>
+          <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 16px;">Beausejour Voyage</p>
+        </div>
+        <div style="text-align: left;">
+          <p style="margin: 0; font-size: 14px;">التاريخ: ${new Date().toLocaleDateString('ar-MA')}</p>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 25px;">
+  `;
+
+  rooms.forEach((room) => {
+    const roomClients = allClients.filter(c =>
+      room.assignments?.some((a: any) => a.clientId === c.id)
+    );
+
+    htmlContent += `
+      <div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="background: #f8fafc; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between;">
+          <div style="font-weight: bold; font-size: 18px; color: #1e293b;">
+            غرفة رقم: <span style="color: #03989e;">${room.roomNumber || '---'}</span>
+          </div>
+          <div style="color: #64748b;">
+            ${room.type === 'Double' ? 'ثنائية' : room.type === 'Triple' ? 'ثلاثية' : room.type === 'Quad' ? 'رباعية' : 'خماسية'} | ${room.hotelName || 'بدون فندق'}
+          </div>
+        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 2px solid #f1f5f9;">
+              <th style="text-align: right; padding: 12px 20px; color: #475569; font-size: 13px;">الاسم الكامل</th>
+              <th style="text-align: right; padding: 12px 20px; color: #475569; font-size: 13px;">رقم الجواز</th>
+              <th style="text-align: right; padding: 12px 20px; color: #475569; font-size: 13px;">الجنس</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    if (roomClients.length === 0) {
+      htmlContent += `
+            <tr>
+              <td colspan="3" style="padding: 30px; text-align: center; color: #94a3b8; font-style: italic;">لا يوجد معتمرين مسكنين</td>
+            </tr>
+      `;
+    } else {
+      roomClients.forEach((client) => {
+        htmlContent += `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 12px 20px; font-weight: 600; color: #0f172a;">${client.name}</td>
+              <td style="padding: 12px 20px; color: #334155;">${client.passportNumber || '---'}</td>
+              <td style="padding: 12px 20px; color: #334155;">${client.gender === 'Male' ? 'ذكر' : client.gender === 'Female' ? 'أنثى' : '---'}</td>
+            </tr>
+        `;
+      });
+    }
+
+    htmlContent += `
+          </tbody>
+        </table>
+      </div>
+    `;
+  });
+
+  htmlContent += `
+      </div>
+      <div style="margin-top: 50px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px; color: #94a3b8; font-size: 12px;">
+        جميع الحقوق محفوظة © ${new Date().getFullYear()} Beausejour Voyage
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = htmlContent;
+  document.body.appendChild(container);
+
+  // Use the callback-based html() which is more reliable for simple usage
+  pdf.html(container, {
+    callback: function (doc) {
+      doc.save(`Rooming_List_${new Date().toISOString().split('T')[0]}.pdf`);
+      document.body.removeChild(container);
+    },
+    x: 0,
+    y: 0,
+    width: 210, // Fit to A4
+    windowWidth: 800, // Important for scaling pixels to mm
+  });
+};

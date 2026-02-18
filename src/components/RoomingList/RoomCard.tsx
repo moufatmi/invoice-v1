@@ -3,15 +3,16 @@ import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { Room } from '../../types';
 import { ClientCard } from './ClientCard';
-import { Users, BedDouble, Bed } from 'lucide-react';
+import { Users, BedDouble, Bed, Trash2 } from 'lucide-react';
 import { Client } from '../../types';
 
 interface RoomProps {
     room: Room;
     clients: Client[];
+    onDelete?: (id: string) => void;
 }
 
-export const RoomCard: React.FC<RoomProps> = ({ room, clients }) => {
+export const RoomCard: React.FC<RoomProps> = ({ room, clients, onDelete }) => {
     const { isOver, setNodeRef } = useDroppable({
         id: `room-${room.id}`,
         data: {
@@ -49,12 +50,28 @@ export const RoomCard: React.FC<RoomProps> = ({ room, clients }) => {
                         {room.type} • Floor {room.floorNumber}
                     </div>
                 </div>
-                <div className={`
-          px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1
-          ${clients.length >= room.capacity ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}
-        `}>
-                    <Users size={14} />
-                    {clients.length}/{room.capacity}
+                <div className="flex items-center gap-2">
+                    <div className={`
+              px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1
+              ${clients.length >= room.capacity ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}
+            `}>
+                        <Users size={14} />
+                        {clients.length}/{room.capacity}
+                    </div>
+                    {onDelete && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('هل أنت متأكد من حذف هذه الغرفة؟')) {
+                                    onDelete(room.id);
+                                }
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="حذف الغرفة"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    )}
                 </div>
             </div>
 

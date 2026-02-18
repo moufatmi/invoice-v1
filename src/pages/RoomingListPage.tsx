@@ -14,6 +14,7 @@ import { supabaseService } from '../services/supabaseService';
 import { Room, Client } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { RoomForm } from '../components/RoomingList/RoomForm';
+import { generateRoomingListPDF } from '../utils/pdfGenerator';
 
 const UnassignZone: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { isOver, setNodeRef } = useDroppable({
@@ -71,6 +72,16 @@ export const RoomingListPage: React.FC = () => {
             alert('Failed to save room. Please try again.');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleDeleteRoom = async (id: string) => {
+        try {
+            await supabaseService.deleteRoom(id);
+            await fetchData();
+        } catch (error) {
+            console.error('Failed to delete room:', error);
+            alert('فشل في حذف الغرفة. يرجى التأكد من أنها فارغة أولاً.');
         }
     };
 
@@ -233,6 +244,7 @@ export const RoomingListPage: React.FC = () => {
                                     clients={clients.filter(c =>
                                         room.assignments?.some(a => a.clientId === c.id)
                                     )}
+                                    onDelete={handleDeleteRoom}
                                 />
                             ))}
 
@@ -265,6 +277,85 @@ export const RoomingListPage: React.FC = () => {
                         onCancel={() => setIsRoomFormOpen(false)}
                     />
                 )}
+
+                {/* --- Printable Report Section (Hidden by default) --- */}
+                <div id="printable-rooming-report" className="hidden print:block p-8 bg-white" dir="rtl">
+                    <style>{`
+                        @media print {
+                            body * { visibility: hidden; }
+                            #printable-rooming-report, #printable-rooming-report * { visibility: visible; }
+                            #printable-rooming-report { 
+                                position: absolute; 
+                                left: 0; 
+                                top: 0; 
+                                width: 100%;
+                                display: block !important;
+                            }
+                            @page { size: A4; margin: 1cm; }
+                            .no-print { display: none !important; }
+                        }
+                    `}</style>
+
+                    <div className="flex justify-between items-center border-b-4 border-blue-600 pb-4 mb-8">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900">تقرير لائحة التسكين</h1>
+                            <p className="text-blue-600 font-medium mt-1">Beausejour Voyage</p>
+                        </div>
+                        <div className="text-left" dir="ltr">
+                            <p className="text-sm text-gray-500">التاريخ: {new Date().toLocaleDateString('ar-MA')}</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-8">
+                        {rooms.map((room) => {
+                            const roomClients = clients.filter(c =>
+                                room.assignments?.some(a => a.clientId === c.id)
+                            );
+
+                            return (
+                                <div key={room.id} className="border-2 border-gray-200 rounded-xl overflow-hidden break-inside-avoid">
+                                    <div className="bg-gray-100 px-4 py-3 flex justify-between items-center border-b-2 border-gray-200">
+                                        <h3 className="text-lg font-bold">
+                                            غرفة رقم: <span className="text-blue-700">{room.roomNumber || '---'}</span>
+                                            <span className="mr-2 text-sm text-gray-500 font-normal">
+                                                ({room.type === 'Double' ? 'ثنائية' : room.type === 'Triple' ? 'ثلاثية' : room.type === 'Quad' ? 'رباعية' : 'خماسية'})
+                                            </span>
+                                        </h3>
+                                        <span className="text-sm font-medium">الفندق: {room.hotelName || '---'}</span>
+                                    </div>
+                                    <table className="w-full text-inner">
+                                        <thead>
+                                            <tr className="bg-gray-50 border-b border-gray-200">
+                                                <th className="px-4 py-2 text-right text-sm text-gray-600">اسم المعتمر الكامل</th>
+                                                <th className="px-4 py-2 text-right text-sm text-gray-600">رقم الجواز</th>
+                                                <th className="px-4 py-2 text-right text-sm text-gray-600">الجنس</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {roomClients.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={3} className="px-4 py-6 text-center text-gray-400 italic">لا يوجد معتمرين مسكنين</td>
+                                                </tr>
+                                            ) : (
+                                                roomClients.map((client) => (
+                                                    <tr key={client.id} className="border-b border-gray-100">
+                                                        <td className="px-4 py-3 font-semibold text-gray-900">{client.name}</td>
+                                                        <td className="px-4 py-3 text-gray-700">{client.passportNumber || '---'}</td>
+                                                        <td className="px-4 py-3 text-gray-700">{client.gender === 'Male' ? 'ذكر' : client.gender === 'Female' ? 'أنثى' : '---'}</td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="mt-12 pt-4 border-t border-gray-200 text-center text-gray-400 text-xs">
+                        تم إنشاء هذا التقرير عبر نظام Beausejour Voyage • {new Date().getFullYear()}
+                    </div>
+                </div>
             </div>
         </DndContext>
     );
