@@ -64,48 +64,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    if (!dbInitialized) {
-      return { error: 'Application is still initializing' };
-    }
-
     try {
       setLoading(true);
       setError(null);
 
-      // Find agent in database first
-      let agent = await db.agents.where('email').equals(email).first();
+      // 1. Check for the primary director account (Ibrahim Fatmi)
+      const isDirector = email === 'brahim@fatmi.com' && password === 'Ibrahim1972';
 
-      if (!agent) {
-        return { error: 'Agent not found in database' };
-      }
-
-      // Get the password from defaultPasswords map
-      const validPassword = defaultPasswords[email];
-
-      if (password !== validPassword) {
-        return { error: 'Invalid password' };
-      }
-
-      if (!agent) {
-        console.log('Agent not found, retrying after delay...');
-        // Wait for initialization and try again
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        agent = await db.agents.where('email').equals(email).first();
-
+      if (isDirector) {
+        // Force get or create in local DB for high reliability
+        let agent = await db.agents.where('email').equals(email).first();
         if (!agent) {
-          return { error: 'Agent not found in database. Please try again.' };
+          const { defaultAgents } = await import('../data/defaultAgents');
+          const defaultAgent = defaultAgents.find(a => a.email === email);
+          if (defaultAgent) {
+            await db.agents.add(defaultAgent);
+            agent = defaultAgent;
+          }
+        }
+
+        if (agent) {
+          setAgentProfile(agent);
+          localStorage.setItem('agent', JSON.stringify(agent));
+          return { agent };
         }
       }
 
-      console.log('Found agent:', agent);
-      // Set state and save to local storage
-      setAgentProfile(agent);
-      localStorage.setItem('agent', JSON.stringify(agent));
+      // 2. Check Password Map for other users
+      const validPassword = defaultPasswords[email];
+      if (validPassword && password === validPassword) {
+        const agent = await db.agents.where('email').equals(email).first();
+        if (agent) {
+          setAgentProfile(agent);
+          localStorage.setItem('agent', JSON.stringify(agent));
+          return { agent };
+        }
+      }
 
-      return { agent };
+      return { error: 'Incorrect email or password' };
     } catch (err) {
       console.error('Sign in error:', err);
-      return { error: 'Failed to sign in' };
+      return { error: 'Failed to sign in. Please try again.' };
     } finally {
       setLoading(false);
     }
@@ -116,9 +115,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       localStorage.removeItem('agent');
       setAgentProfile(null);
-      // Import the reset function dynamically to avoid circular dependencies
-      const { resetAndInitializeDatabase } = await import('../lib/database');
-      await resetAndInitializeDatabase();
+      // We no longer wipe the database on logout to prevent data loss
+      console.log('User signed out successfully');
     } catch (err) {
       console.error('Sign out error:', err);
       setError('Failed to sign out');
