@@ -43,7 +43,7 @@ const AgentPortal: React.FC<AgentPortalProps> = () => {
   }
 
   // Get current agent info
-  const currentAgent = agents.find(agent => agent.id === currentAgentId);
+  const currentAgent = agents.find(agent => agent.id === currentAgentId) || agentProfile;
 
   // Show loading state if any critical data is still loading
   if (agentsLoading && !currentAgent) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, LayoutGrid, GripVertical } from 'lucide-react';
+import { User, LayoutGrid, GripVertical, Users } from 'lucide-react';
 
 const PortalNavigation: React.FC = () => {
   const location = useLocation();
@@ -74,8 +74,8 @@ const PortalNavigation: React.FC = () => {
           <Link
             to="/portal"
             className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${location.pathname === '/portal' || location.pathname === '/'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-none font-medium'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-none font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
           >
             <User className="h-4 w-4" />
@@ -84,12 +84,22 @@ const PortalNavigation: React.FC = () => {
           <Link
             to="/portal/rooming"
             className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${location.pathname === '/portal/rooming'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200 dark:shadow-none font-medium'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200 dark:shadow-none font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
           >
             <LayoutGrid className="h-4 w-4" />
             <span>Rooming</span>
+          </Link>
+          <Link
+            to="/portal/clients"
+            className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${location.pathname === '/portal/clients'
+              ? 'bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-none font-medium'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+          >
+            <Users className="h-4 w-4" />
+            <span>Clients</span>
           </Link>
         </div>
       </div>

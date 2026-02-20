@@ -55,7 +55,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onBack }) => {
           <div className="bg-primary-500 p-4 rounded-2xl inline-block mb-4 shadow-lg" style={{ backgroundColor: '#03989e' }}>
             <Plane className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Agence de Voyage Agent Portal</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Beausejour Voyages Agent Portal</h1>
           <p className="text-gray-600">Sign in to your account</p>
         </div>
 
@@ -156,7 +156,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onBack }) => {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
-            © 2025 Agence de Voyage. Secure Agent Portal.
+            © 2025 Beausejour Voyages. Secure Agent Portal.
           </p>
         </div>
       </div>

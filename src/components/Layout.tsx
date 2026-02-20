@@ -41,7 +41,7 @@ const Layout: React.FC<LayoutProps> = ({
                 <Plane className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Agence de Voyage</h1>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">Beausejour Voyages</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
               </div>
             </div>

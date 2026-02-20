@@ -3,7 +3,7 @@ export type Language = 'en' | 'ar' | 'fr' | 'zh';
 export const translations = {
   en: {
     // Common
-    welcome: 'Welcome to Agence de Voyage!',
+    welcome: 'Welcome to Beausejour Voyages!',
     dashboard: 'Dashboard',
     settings: 'Settings',
     save: 'Save',
@@ -197,7 +197,7 @@ export const translations = {
 
   fr: {
     // Common
-    welcome: 'Bienvenue chez Agence de Voyage!',
+    welcome: 'Bienvenue chez Beausejour Voyages!',
     dashboard: 'Tableau de bord',
     settings: 'Paramètres',
     save: 'Enregistrer',

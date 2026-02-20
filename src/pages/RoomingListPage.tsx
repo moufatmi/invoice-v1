@@ -1,20 +1,21 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-    Users, BedDouble, Filter,
-    Search, Plus, LayoutGrid, CheckCircle, Save
+    Search, Plus, LayoutGrid, Save,
+    FileSpreadsheet, Loader2, RefreshCw
 } from 'lucide-react';
 import {
-    DndContext, DragOverlay, useDraggable,
+    DndContext, DragOverlay,
     useSensor, useSensors, PointerSensor, useDroppable
 } from '@dnd-kit/core';
 import { RoomCard } from '../components/RoomingList/RoomCard';
 import { ClientCard } from '../components/RoomingList/ClientCard';
-import { supabaseService } from '../services/supabaseService';
+import { appwriteService } from '../services/appwriteService';
 import { Room, Client } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { RoomForm } from '../components/RoomingList/RoomForm';
-import { generateRoomingListPDF } from '../utils/pdfGenerator';
+import { parseExcelFile } from '../utils/excelService';
+import toast from 'react-hot-toast';
 
 const UnassignZone: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { isOver, setNodeRef } = useDroppable({
@@ -36,23 +37,53 @@ export const RoomingListPage: React.FC = () => {
     const [rooms, setRooms] = useState<Room[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [draggedClient, setDraggedClient] = useState<Client | null>(null);
     const [isRoomFormOpen, setIsRoomFormOpen] = useState(false);
     const [activeCity, setActiveCity] = useState<'Makkah' | 'Madinah'>('Makkah');
+    const [isImporting, setIsImporting] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-    // Initial load
+    // Initial load and polling sync (fallback for non-realtime)
     useEffect(() => {
         fetchData();
+
+        // 1. Auto-refresh every 30 seconds (fallback)
+        const interval = setInterval(fetchData, 30000);
+
+        // 2. Sync whenever tab is focused
+        const onFocus = () => fetchData();
+        window.addEventListener('focus', onFocus);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('focus', onFocus);
+        };
+    }, []);
+
+    // 3. REAL-TIME SYNC: Listen for direct changes in DB
+    const lastDragTime = React.useRef<number>(0);
+
+    useEffect(() => {
+        const channel = appwriteService.subscribeToChanges(() => {
+            // Ignore realtime events if we just performed a drag (to avoid jiggling)
+            if (Date.now() - lastDragTime.current < 2000) return;
+
+            console.log('Real-time update received! Syncing...');
+            fetchData();
+        });
+
+        return () => {
+            appwriteService.unsubscribe(channel);
+        };
     }, []);
 
     const fetchData = async () => {
         try {
             const [roomsData, clientsData, invoicesData] = await Promise.all([
-                supabaseService.getRooms(),
-                supabaseService.getClients(),
-                supabaseService.getInvoices()
+                appwriteService.getRooms(),
+                appwriteService.getClients(),
+                appwriteService.getInvoices()
             ]);
 
             // Create a map of the latest Umrah info for each client from invoices
@@ -74,13 +105,14 @@ export const RoomingListPage: React.FC = () => {
                 }
             });
 
-            // Enrich clients with info from invoices if missing
+            // Enrich clients with info from invoices ONLY IF MISSING in clients table
             const enrichedClients = clientsData.map(client => {
                 const info = client.id ? clientUmrahInfo[client.id] : null;
                 return {
                     ...client,
-                    passportNumber: client.passportNumber || info?.passportNumber,
-                    gender: client.gender || (info?.gender as any)
+                    // Prioritize client table values, use invoice as fallback
+                    passportNumber: client.passportNumber || info?.passportNumber || '',
+                    gender: client.gender || (info?.gender as any) || undefined
                 };
             });
 
@@ -94,26 +126,74 @@ export const RoomingListPage: React.FC = () => {
     };
 
     const handleSaveRoom = async (roomData: Omit<Room, 'id' | 'assignments'>) => {
-        setIsSaving(true);
+        const loadingToast = toast.loading('Saving room...');
         try {
-            await supabaseService.createRoom(roomData);
+            await appwriteService.createRoom(roomData);
             await fetchData();
             setIsRoomFormOpen(false);
+            toast.success('تمت إضافة الغرفة بنجاح!', { id: loadingToast });
         } catch (error) {
             console.error('Failed to save room:', error);
-            alert('Failed to save room. Please try again.');
+            toast.error('فشل في إضافة الغرفة.', { id: loadingToast });
+        }
+    };
+
+    const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsImporting(true);
+        const loadingToast = toast.loading('Importing pilgrims from Excel...');
+
+        try {
+            const parsedClients = await parseExcelFile(file);
+
+            if (parsedClients.length === 0) {
+                toast.error('No data found in the Excel file.', { id: loadingToast });
+                return;
+            }
+
+            await appwriteService.bulkCreateClients(parsedClients);
+            await fetchData(); // Refresh the list
+
+            toast.success(`Successfully imported ${parsedClients.length} pilgrims!`, { id: loadingToast });
+        } catch (error: any) {
+            console.error('Excel Import Error:', error);
+            toast.error(error.message || 'Failed to import Excel file.', { id: loadingToast });
         } finally {
-            setIsSaving(false);
+            setIsImporting(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
     const handleDeleteRoom = async (id: string) => {
         try {
-            await supabaseService.deleteRoom(id);
+            await appwriteService.deleteRoom(id);
             await fetchData();
         } catch (error) {
             console.error('Failed to delete room:', error);
             alert('فشل في حذف الغرفة. يرجى التأكد من أنها فارغة أولاً.');
+        }
+    };
+
+    const handleExport = async () => {
+        const loadingToast = toast.loading('Syncing latest data before export...');
+        try {
+            setIsLoading(true); // Show spinner to ensure UI updates are blocked
+            await fetchData();
+            setIsLoading(false);
+            toast.success('Data synced! Opening print view...', { id: loadingToast });
+
+            // Give React more time to flush state updates to the DOM
+            // and ensure images/fonts are ready if any
+            setTimeout(() => {
+                window.print();
+            }, 1000);
+        } catch (error) {
+            console.error('Sync before export failed:', error);
+            setIsLoading(false);
+            toast.error('Failed to sync latest data. Printing current view anyway.', { id: loadingToast });
+            window.print();
         }
     };
 
@@ -133,50 +213,65 @@ export const RoomingListPage: React.FC = () => {
 
         // Handle Unassigning
         if (over.id === 'unassign-zone') {
-            const updatedRooms = rooms.map(room => ({
-                ...room,
-                assignments: room.assignments?.filter(a => a.clientId !== clientId) || []
-            }));
+            const updatedRooms = rooms.map(room => {
+                if (room.city === activeCity) {
+                    return {
+                        ...room,
+                        assignments: room.assignments?.filter(a => a.clientId !== clientId) || []
+                    };
+                }
+                return room;
+            });
             setRooms(updatedRooms);
 
             try {
-                await supabaseService.removeClientFromRoom(clientId);
+                await appwriteService.removeClientFromRoom(clientId, activeCity);
             } catch (error) {
                 console.error('Unassign failed:', error);
+                toast.error('Failed to unassign client');
                 fetchData();
             }
             return;
         }
 
-        const roomId = over.data.current.room.id;
+        const targetRoom = over.data.current.room;
+        const roomId = targetRoom.id;
+        const city = targetRoom.city;
 
-        // Optimistic UI Update
+        // Prevent overflow
+        const roomToUpdate = rooms.find(r => r.id === roomId);
+        if (roomToUpdate && (roomToUpdate.assignments?.length || 0) >= roomToUpdate.capacity) {
+            toast.error('الغرفة ممتلئة!');
+            return;
+        }
+
+        // Optimistic UI Update (IMPROVED: No mutation)
         const updatedRooms = rooms.map(room => {
-            if (room.id === roomId) {
-                // Remove client from any other room first (if already assigned)
-                const currentRoom = rooms.find(r => r.assignments?.some(a => a.clientId === clientId));
-                if (currentRoom) {
-                    currentRoom.assignments = currentRoom.assignments?.filter(a => a.clientId !== clientId);
-                }
+            // 1. Remove client from any other room in the SAME CITY
+            let newAssignments = room.assignments?.filter(a => a.clientId !== clientId) || [];
 
-                // Add to new room
-                return {
-                    ...room,
-                    assignments: [
-                        ...(room.assignments || []),
-                        { id: 'temp-' + Date.now(), roomId, clientId, assignedAt: new Date().toISOString() }
-                    ]
-                };
+            // 2. Add to new room
+            if (room.id === roomId) {
+                newAssignments = [
+                    ...newAssignments,
+                    { id: 'temp-' + Date.now(), roomId, clientId, assignedAt: new Date().toISOString() }
+                ];
             }
-            return room;
+
+            return {
+                ...room,
+                assignments: newAssignments
+            };
         });
         setRooms(updatedRooms);
 
         // Backend Sync
+        lastDragTime.current = Date.now();
         try {
-            await supabaseService.assignClientToRoom(roomId, clientId);
-        } catch (error) {
-            console.error('Drag failed:', error);
+            await appwriteService.assignClientToRoom(roomId, clientId, city);
+        } catch (error: any) {
+            console.error('Assignment failed:', error);
+            toast.error(error.message || 'فشل في تسكين المعتمر');
             fetchData(); // Revert on failure
         }
     };
@@ -220,7 +315,30 @@ export const RoomingListPage: React.FC = () => {
                             {unassignedClients.length} unassigned clients • {rooms.length} rooms
                         </p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => fetchData()}
+                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
+                            title="تحديث البيانات"
+                        >
+                            <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
+                        </button>
+                        <div className="h-6 w-px bg-gray-200 mx-1" />
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleExcelImport}
+                            accept=".xlsx,.xls,.csv"
+                            className="hidden"
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isImporting}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 font-medium transition-colors disabled:opacity-50"
+                        >
+                            {isImporting ? <Loader2 className="animate-spin" size={18} /> : <FileSpreadsheet size={18} />}
+                            Import Excel
+                        </button>
                         <button
                             onClick={() => setIsRoomFormOpen(true)}
                             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 font-medium transition-colors"
@@ -230,7 +348,7 @@ export const RoomingListPage: React.FC = () => {
                         </button>
                         <button
                             className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-all active:scale-95"
-                            onClick={() => window.print()}
+                            onClick={handleExport}
                         >
                             <Save size={18} />
                             Export List
@@ -323,6 +441,7 @@ export const RoomingListPage: React.FC = () => {
                     <RoomForm
                         onSave={handleSaveRoom}
                         onCancel={() => setIsRoomFormOpen(false)}
+                        initialCity={activeCity}
                     />
                 )}
 
@@ -357,46 +476,54 @@ export const RoomingListPage: React.FC = () => {
                     </div>
 
                     <div className="space-y-8">
-                        {rooms.filter(r => r.city === activeCity).map((room) => {
-                            const roomClients = clients.filter(c =>
-                                room.assignments?.some(a => a.clientId === c.id)
-                            );
+                        {['Makkah', 'Madinah'].map((city) => {
+                            const cityRooms = rooms.filter(r => r.city === city && (r.assignments?.length || 0) > 0);
+
+                            if (cityRooms.length === 0) return null;
 
                             return (
-                                <div key={room.id} className="border-2 border-gray-200 rounded-xl overflow-hidden break-inside-avoid">
-                                    <div className="bg-gray-100 px-4 py-3 flex justify-between items-center border-b-2 border-gray-200">
-                                        <h3 className="text-lg font-bold">
-                                            غرفة رقم: <span className="text-blue-700">{room.roomNumber || '---'}</span>
-                                            <span className="mr-2 text-sm text-gray-500 font-normal">
-                                                ({room.type === 'Double' ? 'ثنائية' : room.type === 'Triple' ? 'ثلاثية' : room.type === 'Quad' ? 'رباعية' : 'خماسية'})
-                                            </span>
-                                        </h3>
-                                        <span className="text-sm font-medium">الفندق: {room.hotelName || '---'}</span>
+                                <div key={city} className="space-y-6">
+                                    <div className="bg-blue-50 border-r-4 border-blue-600 p-4 mb-4">
+                                        <h2 className="text-xl font-bold text-blue-900">
+                                            اللائحة الخاصة بـ: {city === 'Makkah' ? 'مكة المكرمة' : 'المدينة المنورة'}
+                                        </h2>
                                     </div>
-                                    <table className="w-full text-inner">
-                                        <thead>
-                                            <tr className="bg-gray-50 border-b border-gray-200">
-                                                <th className="px-4 py-2 text-right text-sm text-gray-600">اسم المعتمر الكامل</th>
-                                                <th className="px-4 py-2 text-right text-sm text-gray-600">رقم الجواز</th>
-                                                <th className="px-4 py-2 text-right text-sm text-gray-600">الجنس</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {roomClients.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan={3} className="px-4 py-6 text-center text-gray-400 italic">لا يوجد معتمرين مسكنين</td>
-                                                </tr>
-                                            ) : (
-                                                roomClients.map((client) => (
-                                                    <tr key={client.id} className="border-b border-gray-100">
-                                                        <td className="px-4 py-3 font-semibold text-gray-900">{client.name}</td>
-                                                        <td className="px-4 py-3 text-gray-700">{client.passportNumber || '---'}</td>
-                                                        <td className="px-4 py-3 text-gray-700">{client.gender === 'Male' ? 'ذكر' : client.gender === 'Female' ? 'أنثى' : '---'}</td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
+
+                                    {cityRooms.map((room) => {
+                                        const roomClients = clients.filter(c =>
+                                            room.assignments?.some(a => a.clientId === c.id)
+                                        );
+
+                                        return (
+                                            <div key={room.id} className="border-2 border-gray-200 rounded-xl overflow-hidden break-inside-avoid">
+                                                <div className="bg-gray-100 px-4 py-3 flex justify-between items-center border-b-2 border-gray-200">
+                                                    <h3 className="text-lg font-bold">
+                                                        غرفة رقم: <span className="text-blue-700">{room.roomNumber || '---'}</span>
+                                                        <span className="mr-2 text-sm text-gray-500 font-normal">
+                                                            ({room.type === 'Double' ? 'ثنائية' : room.type === 'Triple' ? 'ثلاثية' : room.type === 'Quad' ? 'رباعية' : 'خماسية'})
+                                                        </span>
+                                                    </h3>
+                                                    <span className="text-sm font-medium">الفندق: {room.hotelName || '---'}</span>
+                                                </div>
+                                                <table className="w-full text-right border-collapse">
+                                                    <thead>
+                                                        <tr className="bg-gray-50 border-b border-gray-200">
+                                                            <th className="px-4 py-2 text-right text-sm text-gray-600 w-1/2">اسم المعتمر الكامل</th>
+                                                            <th className="px-4 py-2 text-right text-sm text-gray-600">الجنس</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {roomClients.map((client) => (
+                                                            <tr key={client.id} className="border-b border-gray-100">
+                                                                <td className="px-4 py-3 font-semibold text-gray-900">{client.name}</td>
+                                                                <td className="px-4 py-3 text-gray-700">{client.gender === 'Male' ? 'ذكر' : client.gender === 'Female' ? 'أنثى' : '---'}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             );
                         })}

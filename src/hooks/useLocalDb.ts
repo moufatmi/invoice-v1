@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabaseService } from '../services/supabaseService';
-import { Invoice, Agent, InvoiceItem, DashboardStats } from '../types';
+import { appwriteService } from '../services/appwriteService';
+import { Invoice, Agent, InvoiceItem, DashboardStats, Client } from '../types';
 
 export function useInvoices(agentId?: string) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -10,12 +10,12 @@ export function useInvoices(agentId?: string) {
   const fetchInvoices = useCallback(async () => {
     setIsLoading(true);
     try {
-      let data = await supabaseService.getInvoices();
+      let data = await appwriteService.getInvoices();
       if (agentId) {
-        data = data.filter(inv => inv.agentId === agentId);
+        data = data.filter((inv: Invoice) => inv.agentId === agentId);
       }
       // Sort in memory since Supabase ordering might be basic
-      data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      data.sort((a: Invoice, b: Invoice) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setInvoices(data);
       setError(null);
@@ -35,7 +35,7 @@ export function useInvoices(agentId?: string) {
   const createInvoice = async (invoice: Omit<Invoice, 'id'>, items: Omit<InvoiceItem, 'id' | 'invoiceId'>[]) => {
     try {
       const fullInvoice = { ...invoice, items } as any;
-      await supabaseService.createInvoice(fullInvoice);
+      await appwriteService.createInvoice(fullInvoice);
       await fetchInvoices();
     } catch (err: any) {
       throw new Error(err.message || 'Failed to create invoice');
@@ -45,7 +45,7 @@ export function useInvoices(agentId?: string) {
   const updateInvoice = async (id: string, updates: Partial<Invoice>, items?: InvoiceItem[]) => {
     try {
       const fullUpdates = { ...updates, items } as any;
-      await supabaseService.updateInvoice(id, fullUpdates);
+      await appwriteService.updateInvoice(id, fullUpdates);
       await fetchInvoices();
     } catch (err: any) {
       throw new Error(err.message || 'Failed to update invoice');
@@ -54,7 +54,7 @@ export function useInvoices(agentId?: string) {
 
   const deleteInvoice = async (id: string) => {
     try {
-      await supabaseService.deleteInvoice(id);
+      await appwriteService.deleteInvoice(id);
       await fetchInvoices();
     } catch (err: any) {
       throw new Error(err.message || 'Failed to delete invoice');
@@ -122,7 +122,7 @@ export function useDashboardStats(agentId?: string) {
   const fetchStats = useCallback(async () => {
     setIsLoading(true);
     try {
-      let invoices = await supabaseService.getInvoices();
+      let invoices = await appwriteService.getInvoices();
       if (agentId) {
         invoices = invoices.filter(inv => inv.agentId === agentId);
       }
@@ -136,7 +136,7 @@ export function useDashboardStats(agentId?: string) {
         paidInvoices: paidInvoicesHeaders.length,
         unpaidInvoices: overdueInvoices.length, // 'unpaid' in stats usually means overdue or outstanding
         pendingInvoices: pendingInvoices.length,
-        totalRevenue: paidInvoicesHeaders.reduce((sum, inv) => sum + inv.total, 0),
+        totalRevenue: paidInvoicesHeaders.reduce((sum: number, inv: Invoice) => sum + inv.total, 0),
         recentInvoices: invoices.slice(0, 5) // Invoices are already sorted in getInvoices if we did it right, otherwise sort here
       });
       setError(null);
@@ -170,7 +170,7 @@ export function useTodaysInvoices(agentId?: string) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      let allInvoices = await supabaseService.getInvoices();
+      let allInvoices = await appwriteService.getInvoices();
 
       let todaysInvoices = allInvoices.filter(inv => {
         const invDate = new Date(inv.createdAt);
@@ -199,5 +199,39 @@ export function useTodaysInvoices(agentId?: string) {
     isLoading,
     error,
     refetch: fetchTodaysInvoices
+  };
+}
+
+export function useClients() {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchClients = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await appwriteService.getClients();
+      // Sort alphabetically by name
+      data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      setClients(data);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching clients:', err);
+      setError(err.message || 'Failed to fetch clients');
+      setClients([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
+
+  return {
+    clients,
+    isLoading,
+    error,
+    refetch: fetchClients
   };
 }

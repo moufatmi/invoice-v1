@@ -18,7 +18,7 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(24);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Agence de Voyage', 20, 25);
+  pdf.text('Beausejour Voyages', 20, 25);
 
   // Invoice title
   pdf.setTextColor(...textColor);
@@ -221,7 +221,7 @@ export const generateInvoicePDF = (invoice: Invoice): void => {
   pdf.setTextColor(...lightGray);
   pdf.setFontSize(10);
   pdf.setFont('helvetica', 'normal');
-  pdf.text('Thank you for choosing Agence de Voyage!', 20, pageHeight - 30);
+  pdf.text('Thank you for choosing Beausejour Voyages!', 20, pageHeight - 30);
   pdf.text('For questions about this invoice, please contact us at billing@agencedevoyage.com', 20, pageHeight - 20);
 
   // Generate filename and download

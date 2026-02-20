@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Trash2, Save, Send, User, Plane, FileText, Bed, Calendar, Scan, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Save, Send, User, Plane, FileText, Bed, Calendar, Scan, Loader2, Users } from 'lucide-react';
 import { Invoice, Client, InvoiceItem, Agent } from '../types';
 import { generateInvoiceNumber, calculateItemTotal, calculateSubtotal, calculateTax, calculateTotal, formatCurrency } from '../utils/helpers';
-import { TRAVEL_SERVICES, TAX_RATE } from '../utils/constants';
+import { TAX_RATE } from '../utils/constants';
 import { useSettings } from '../contexts/SettingsContext';
 import { useTranslation } from '../utils/translations';
 import { extractPassportDetails } from '../services/ocrService';
+import { useClients } from '../hooks/useLocalDb';
 import toast from 'react-hot-toast';
 
 interface InvoiceFormProps {
@@ -31,6 +32,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, currentAgen
   const { t } = useTranslation(language);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const { clients = [] } = useClients();
+  const [showClientList, setShowClientList] = useState(false);
+  const [clientSearch, setClientSearch] = useState('');
 
   const [client, setClient] = useState<Client>({
     id: editingInvoice?.client?.id || '',
@@ -194,6 +198,85 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, currentAgen
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Select Existing Client (اختيار معتمر مسجل)
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <Users className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search by name or passport..."
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
+                style={{ '--tw-ring-color': '#03989e' } as React.CSSProperties}
+                value={clientSearch}
+                onChange={(e) => {
+                  setClientSearch(e.target.value);
+                  setShowClientList(true);
+                }}
+                onFocus={() => setShowClientList(true)}
+              />
+
+              {showClientList && (clientSearch || clients.length > 0) && (
+                <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                  {clients
+                    .filter(c =>
+                      c.name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                      c.passportNumber?.toLowerCase().includes(clientSearch.toLowerCase())
+                    )
+                    .slice(0, 10)
+                    .map(c => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors"
+                        onClick={() => {
+                          setClient({
+                            id: c.id || '',
+                            name: c.name || '',
+                            email: c.email || '',
+                            phone: c.phone || '',
+                            address: c.address || '',
+                            passportNumber: c.passportNumber || '',
+                            gender: c.gender,
+                            dateOfBirth: c.dateOfBirth || ''
+                          });
+                          if (c.passportNumber) setPassportNumber(c.passportNumber);
+                          if (c.gender) setGender(c.gender);
+                          if (c.dateOfBirth) setDateOfBirth(formatDateForInput(c.dateOfBirth));
+                          setClientSearch('');
+                          setShowClientList(false);
+                          toast.success('Client selected and data populated!');
+                        }}
+                      >
+                        <div>
+                          <p className="font-bold text-gray-900 dark:text-white">{c.name}</p>
+                          <p className="text-xs text-gray-500">{c.passportNumber || 'No Passport'}</p>
+                        </div>
+                        <Plus size={16} className="text-[#03989e]" />
+                      </button>
+                    ))}
+                  {clients.length === 0 && (
+                    <div className="p-4 text-center text-gray-500 text-sm">No clients found</div>
+                  ) || clients.filter(c =>
+                    c.name?.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                    c.passportNumber?.toLowerCase().includes(clientSearch.toLowerCase())
+                  ).length === 0 && (
+                      <div className="p-4 text-center text-gray-500 text-sm">No matching clients</div>
+                    )}
+                </div>
+              )}
+              {showClientList && (
+                <div
+                  className="fixed inset-0 z-40 bg-transparent"
+                  onClick={() => setShowClientList(false)}
+                />
+              )}
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Client Name *
@@ -474,17 +557,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, currentAgen
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Service/Description *
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={item.description || ''}
-                    onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                    onChange={(e) => updateItem(item.id!, 'description', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     style={{ '--tw-ring-color': '#03989e' } as React.CSSProperties}
-                  >
-                    <option value="">Select a service</option>
-                    {TRAVEL_SERVICES.map(service => (
-                      <option key={service} value={service}>{service}</option>
-                    ))}
-                  </select>
+                    placeholder="Enter service or description"
+                  />
                 </div>
 
                 <div className="md:col-span-2">
@@ -495,7 +575,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, currentAgen
                     type="number"
                     min="1"
                     value={item.quantity ?? 0}
-                    onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
+                    onChange={(e) => updateItem(item.id!, 'quantity', parseInt(e.target.value) || 1)}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     style={{ '--tw-ring-color': '#03989e' } as React.CSSProperties}
                   />
@@ -510,7 +590,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, currentAgen
                     min="0"
                     step="0.01"
                     value={item.unitPrice ?? 0}
-                    onChange={(e) => updateItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => updateItem(item.id!, 'unitPrice', parseFloat(e.target.value) || 0)}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                     style={{ '--tw-ring-color': '#03989e' } as React.CSSProperties}
                   />
@@ -527,7 +607,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSave, onCancel, currentAgen
 
                 <div className="md:col-span-1">
                   <button
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => removeItem(item.id!)}
                     disabled={items.length === 1}
                     className="w-full p-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
